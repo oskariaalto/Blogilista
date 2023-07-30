@@ -5,7 +5,7 @@ const User = require('../models/user')
 require('dotenv').config()
 
 loginRouter.post('/', async (request, response) => {
-    const {username, password} = request.body
+    const { username, password } = request.body
     const user = await User.findOne({username})
 
     const passwordRight = user === null
@@ -26,7 +26,7 @@ loginRouter.post('/', async (request, response) => {
 
     response    
         .status(200)
-        .send({token, username: username, name: user.name})
+        .json({token, username: username, name: user.name})
 })
 
 module.exports = loginRouter

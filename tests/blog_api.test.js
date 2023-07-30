@@ -1,4 +1,4 @@
-import { agent as supertest } from 'supertest'
+const supertest = require('supertest')
 const mongoose = require('mongoose')
 const app = require('../app')
 const bcrypt = require('bcryptjs')
@@ -9,22 +9,19 @@ const Blog = require('../models/blog')
 const helper = require('./test_helper')
 const User = require('../models/user')
 
-agent = supertest(app)
+const login = async (creds) => { 
+    console.log(creds)
+    const res = await api.post('/api/login', creds)
+    console.log(res.data)
+    return res.data
+}
 
-beforeEach(async () => {
-    await Blog.deleteMany({})
-    await Blog.insertMany(helper.initialBlogs)
-})
-beforeEach(async () =>{
-    await User.deleteMany({})
-    await User.insertMany(helper.initialUser)
-})
-
-const token = api.post('/api/login', { username: helper.initialUser.username , password: helper.initialUser.passwordHash})
-agent.auth(token.accessToken, {type: 'bearer'})
 
 describe('loading blog data', () => {
     test('blogs are returned as json', async () => {
+        await Blog.deleteMany({})
+        await Blog.insertMany(helper.initialBlogs)
+
         await api
             .get('/api/blogs')
             .expect(200)
@@ -46,17 +43,24 @@ describe('loading blog data', () => {
 
 
 describe('adding blog works', () => {
+    const username = helper.initialUser.username 
+    const password = helper.initialUser.passwordHash
     test('valid adition works', async () => {
+
+        const user = await login({username,password})
+
         const newBlog = {
             title: 'Awsome',
             author: 'Mato Matala',
             url: 'heipparallaa.fi',
             likes: 10
         }
-    
-        await agent
-            .post('/api/blogs')
-            .send(newBlog)
+        const config = {
+            headers: { Authorization: `bearer ${user.token}`},
+        }
+
+        await api
+            .post('/api/blogs', newBlog, config)
             .expect(200)
         
         const blogsInEnd = await helper.blogsInDB()
@@ -67,6 +71,8 @@ describe('adding blog works', () => {
     })
     
     test('if likes empty returns 0', async () => {
+        const token = await api.post('/api/login', { username: helper.initialUser.username , password: helper.initialUser.passwordHash}).data
+
         const newBlog = {
             title: 'Awsome',
             author: 'Mato Matala',
@@ -75,8 +81,8 @@ describe('adding blog works', () => {
         
         await api
             .post('/api/blogs')
-            .set('Authorization', `bearer ${token}`)
             .send(newBlog)
+            .set('Authorization', `bearer ${token}`)
             .expect(201)
             .expect('Content-Type', /application\/json/)
     
@@ -85,6 +91,8 @@ describe('adding blog works', () => {
     })
     
     test('title and url missing error', async () => {
+        const token = await api.post('/api/login', { username: helper.initialUser.username , password: helper.initialUser.passwordHash}).data
+
         const newBlog = {
             author: 'Mato Matala',
         }

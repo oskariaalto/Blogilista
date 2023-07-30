@@ -52,13 +52,13 @@ const initialBlogs = [
     }  
 ]
 
-const initialUser=[{
+const initialUser={
   _id: '634577026c59a8f07e4516ea',
   username: 'monni',
   name: 'Oskari Aalto',
   passwordHash: 'selkeä',
   __v:0
-}]
+}
 
 const usersInDb = async () => {
   const users = await User.find({})

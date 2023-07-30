@@ -1,5 +1,4 @@
 const blogsRouter = require('express').Router()
-const jwt = require('jsonwebtoken')
 require('dotenv').config()
 
 const Blog = require('../models/blog')
@@ -52,16 +51,22 @@ blogsRouter.delete('/:id', async (request, response) =>{
     response.status(400).json({error: 'invalid id'})
   }else if (blog.user.toString() === user.id){
     await Blog.findByIdAndRemove(request.params.id)
+
+    user.blogs = user.blogs.filter(b => b.id !== request.params.id)
+    await user.save()
+    
     response.status(204).end()
   }
 })
 
 blogsRouter.put('/:id', async (request,response) =>{
   const body = request.body
+  const user = request.user
 
   const blog ={
     title: body.title,
     author: body.author,
+    user: user,
     url: body.url,
     likes: body.likes 
   }
